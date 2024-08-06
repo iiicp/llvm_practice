@@ -3,7 +3,7 @@
 #include "llvm/Support/ErrorOr.h"
 #include "parser.h"
 #include "printVisitor.h"
-// #include "codegen.h"
+#include "codegen.h"
 #include "sema.h"
 #include "diag_engine.h"
 
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     Parser parser(lex, sema);
     auto program = parser.ParseProgram();
 
-    PrintVisitor printVisitor(program);
-    // CodeGen codegen(program);
+    // PrintVisitor printVisitor(program);
+    CodeGen codegen(program);
     return 0;
 }

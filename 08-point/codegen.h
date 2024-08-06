@@ -6,11 +6,15 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/ADT/DenseMap.h"
 
-class CodeGen : public Visitor {
+class CodeGen : public Visitor, public TypeVisitor {
 public:
     CodeGen(std::shared_ptr<Program> p) {
-        module = std::make_shared<llvm::Module>("expr", context);
+        module = std::make_unique<llvm::Module>("expr", context);
         VisitProgram(p.get());
+    }
+
+    std::unique_ptr<llvm::Module> &GetModule() {
+        return module;
     }
 
 private:
@@ -22,15 +26,22 @@ private:
     llvm::Value * VisitContinueStmt(ContinueStmt *p) override;
     llvm::Value * VisitBreakStmt(BreakStmt *p) override;
     llvm::Value * VisitVariableDecl(VariableDecl *decl) override;
-    llvm::Value * VisitAssignExpr(AssignExpr *expr) override;
     llvm::Value * VisitBinaryExpr(BinaryExpr *binaryExpr) override;
     llvm::Value * VisitNumberExpr(NumberExpr *factorExpr) override;
+    llvm::Value * VisitUnaryExpr(UnaryExpr *expr) override;
+    llvm::Value * VisitSizeOfExpr(SizeOfExpr *expr) override;
+    llvm::Value * VisitPostIncExpr(PostIncExpr *expr) override;
+    llvm::Value * VisitPostDecExpr(PostDecExpr *expr) override;
+    llvm::Value * VisitThreeExpr(ThreeExpr *expr) override;
     llvm::Value * VisitVariableAccessExpr(VariableAccessExpr *factorExpr) override;
+
+    llvm::Type * VisitPrimaryType(CPrimaryType *ty) override;
+    llvm::Type * VisitPointType(CPointType *ty) override;
 
 private:
     llvm::LLVMContext context;
     llvm::IRBuilder<> irBuilder{context};
-    std::shared_ptr<llvm::Module> module;
+    std::unique_ptr<llvm::Module> module;
     llvm::Function *curFunc{nullptr};
 
     llvm::DenseMap<AstNode *, llvm::BasicBlock *> breakBBs;

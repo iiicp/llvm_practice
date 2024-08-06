@@ -317,15 +317,14 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
         }
 
         if (isTypeName) {
-            auto node = std::make_shared<SizeOfExpr>();
+            
             Consume(TokenType::l_parent);
-            node->type = ParseType();
+            auto type = ParseType();
             Consume(TokenType::r_parent);
-            return node;
+            return sema.SemaSizeofExprNode(nullptr, type);
         }else {
-            auto node = std::make_shared<SizeOfExpr>();
-            node->node = ParseUnaryExpr();
-            return node;
+            auto node = ParseUnaryExpr();
+            return sema.SemaSizeofExprNode(node, nullptr);
         }
     }
 
@@ -360,27 +359,21 @@ std::shared_ptr<AstNode> Parser::ParseUnaryExpr() {
         break;
     }
     Advance();
-    auto node = std::make_shared<UnaryExpr>();
-    node->op = op;
-    node->node = ParseUnaryExpr();
-    return node;
+    Token tmp = tok;
+    return sema.SemaUnaryExprNode(ParseUnaryExpr(), op, tmp);
 }
 
 std::shared_ptr<AstNode> Parser::ParsePostFixExpr() {
     auto left = ParsePrimary();
     for (;;) {
         if (tok.tokenType == TokenType::plus_plus) {
+            left = sema.SemaPostIncExprNode(left, tok);
             Consume(TokenType::plus_plus);
-            auto node = std::make_shared<PostIncExpr>();
-            node->left = left;
-            left = node;
             continue;
         }
         if (tok.tokenType == TokenType::minus_minus) {
+            left = sema.SemaPostDecExprNode(left, tok);
             Consume(TokenType::minus_minus);
-            auto node = std::make_shared<PostDecExpr>();
-            node->left = left;
-            left = node;
             continue;
         }
 
@@ -466,16 +459,12 @@ std::shared_ptr<AstNode> Parser::ParseConditionalExpr() {
     if (tok.tokenType != TokenType::question) {
         return left;
     }
+    Token tmp = tok;
     Consume(TokenType::question);
     auto then = ParseExpr();
     Consume(TokenType::colon);
     auto els = ParseConditionalExpr();
-
-    auto node = std::make_shared<ThreeExpr>();
-    node->cond = left;
-    node->then = then;
-    node->els = els;
-    return node;
+    return sema.SemaThreeExprNode(left, then, els, tmp);
 }
 
 std::shared_ptr<AstNode> Parser::ParseLogOrExpr() {

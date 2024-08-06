@@ -69,6 +69,7 @@ public:
     virtual ~AstNode() {}
     std::shared_ptr<CType> ty;
     Token tok;
+    bool isLValue{false};
     AstNode(Kind kind): kind(kind) {}
     const Kind GetKind() const {return kind;}
     virtual llvm::Value * Accept(Visitor *v) {return nullptr;}
